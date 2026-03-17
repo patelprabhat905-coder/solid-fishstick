@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AnomalyDetect Pro — Intelligent Data Anomaly Detection</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Chart.js Zoom Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon"><i class="fas fa-chart-line"></i></span>
+      <div class="logo-text">
+        <span class="logo-main">AnomalyDetect</span>
+        <span class="logo-badge">PRO</span>
+      </div>
+    </div>
+    <p class="header-tagline">Intelligent Real-Time Data Anomaly Detection Engine</p>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btnExportCSV" title="Export anomalies as CSV">
+        <i class="fas fa-file-csv"></i> Export CSV
+      </button>
+      <button class="btn btn-ghost" id="btnExportPNG" title="Export chart as PNG">
+        <i class="fas fa-image"></i> Export PNG
+      </button>
+      <button class="btn btn-primary" id="btnRunDetection">
+        <i class="fas fa-bolt"></i> Run Detection
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN LAYOUT ===== -->
+<main class="app-grid">
+
+  <!-- ===== LEFT SIDEBAR ===== -->
+  <aside class="sidebar">
+
+    <!-- Data Source Panel -->
+    <section class="panel" id="panelData">
+      <div class="panel-header">
+        <i class="fas fa-database"></i>
+        <h3>Data Source</h3>
+      </div>
+      <div class="panel-body">
+        <!-- Tabs -->
+        <div class="tab-group">
+          <button class="tab-btn active" data-tab="sample">Sample</button>
+          <button class="tab-btn" data-tab="upload">Upload</button>
+          <button class="tab-btn" data-tab="manual">Manual</button>
+        </div>
+
+        <!-- Sample Datasets -->
+        <div class="tab-content active" id="tab-sample">
+          <p class="hint">Choose a built-in dataset to get started instantly.</p>
+          <div class="dataset-list">
+            <button class="dataset-card active" data-dataset="sensor">
+              <i class="fas fa-thermometer-half"></i>
+              <div>
+                <span class="ds-name">IoT Sensor</span>
+                <span class="ds-desc">Temperature readings with noise</span>
+              </div>
+            </button>
+            <button class="dataset-card" data-dataset="finance">
+              <i class="fas fa-chart-candlestick"></i>
+              <div>
+                <span class="ds-name">Financial Prices</span>
+                <span class="ds-desc">Stock price time series</span>
+              </div>
+            </button>
+            <button class="dataset-card" data-dataset="network">
+              <i class="fas fa-network-wired"></i>
+              <div>
+                <span class="ds-name">Network Traffic</span>
+                <span class="ds-desc">Packets/sec with DDoS spikes</span>
+              </div>
+            </button>
+            <button class="dataset-card" data-dataset="heartbeat">
+              <i class="fas fa-heartbeat"></i>
+              <div>
+                <span class="ds-name">ECG Signal</span>
+                <span class="ds-desc">Heartbeat signal with arrhythmia</span>
+              </div>
+            </button>
+          </div>
+          <button class="btn btn-outline w-full mt-2" id="btnLoadSample">
+            <i class="fas fa-download"></i> Load Dataset
+          </button>
+        </div>
+
+        <!-- Upload -->
+        <div class="tab-content" id="tab-upload">
+          <p class="hint">Upload CSV or JSON file. First numeric column used.</p>
+          <div class="upload-zone" id="uploadZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Drag & drop or click to browse</p>
+            <span>Supports CSV, JSON</span>
+          </div>
+          <input type="file" id="fileInput" accept=".csv,.json" style="display:none" />
+          <div id="uploadStatus" class="upload-status"></div>
+        </div>
+
+        <!-- Manual Entry -->
+        <div class="tab-content" id="tab-manual">
+          <p class="hint">Enter comma-separated numeric values.</p>
+          <textarea class="manual-input" id="manualInput" placeholder="e.g. 12, 14, 13, 45, 15, 12, 11, 90, 14, 13..."></textarea>
+          <button class="btn btn-outline w-full mt-2" id="btnParseManual">
+            <i class="fas fa-check"></i> Use This Data
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Algorithm Panel -->
+    <section class="panel" id="panelAlgorithm">
+      <div class="panel-header">
+        <i class="fas fa-brain"></i>
+        <h3>Algorithm</h3>
+      </div>
+      <div class="panel-body">
+        <div class="algo-list">
+          <label class="algo-card" data-algo="zscore">
+            <input type="radio" name="algorithm" value="zscore" checked />
+            <div class="algo-info">
+              <span class="algo-name">Z-Score</span>
+              <span class="algo-desc">Standard deviation method</span>
+            </div>
+            <span class="algo-badge speed-fast">Fast</span>
+          </label>
+          <label class="algo-card" data-algo="iqr">
+            <input type="radio" name="algorithm" value="iqr" />
+            <div class="algo-info">
+              <span class="algo-name">IQR</span>
+              <span class="algo-desc">Interquartile range method</span>
+            </div>
+            <span class="algo-badge speed-fast">Fast</span>
+          </label>
+          <label class="algo-card" data-algo="movingavg">
+            <input type="radio" name="algorithm" value="movingavg" />
+            <div class="algo-info">
+              <span class="algo-name">Moving Average</span>
+              <span class="algo-desc">Rolling window threshold</span>
+            </div>
+            <span class="algo-badge speed-med">Medium</span>
+          </label>
+          <label class="algo-card" data-algo="isolation">
+            <input type="radio" name="algorithm" value="isolation" />
+            <div class="algo-info">
+              <span class="algo-name">Isolation Forest</span>
+              <span class="algo-desc">Tree-based isolation score</span>
+            </div>
+            <span class="algo-badge speed-med">Medium</span>
+          </label>
+          <label class="algo-card" data-algo="dbscan">
+            <input type="radio" name="algorithm" value="dbscan" />
+            <div class="algo-info">
+              <span class="algo-name">DBSCAN</span>
+              <span class="algo-desc">Density-based clustering</span>
+            </div>
+            <span class="algo-badge speed-slow">Advanced</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Panel -->
+    <section class="panel" id="panelSettings">
+      <div class="panel-header">
+        <i class="fas fa-sliders-h"></i>
+        <h3>Settings</h3>
+      </div>
+      <div class="panel-body settings-grid">
+
+        <div class="setting-item">
+          <label>Sensitivity / Threshold <span class="val-badge" id="valSensitivity">2.5</span></label>
+          <input type="range" id="sliderSensitivity" min="0.5" max="5" step="0.1" value="2.5" class="slider" />
+          <div class="range-labels"><span>Low</span><span>High</span></div>
+        </div>
+
+        <div class="setting-item">
+          <label>Window Size (Moving Avg) <span class="val-badge" id="valWindow">10</span></label>
+          <input type="range" id="sliderWindow" min="2" max="50" step="1" value="10" class="slider" />
+          <div class="range-labels"><span>2</span><span>50</span></div>
+        </div>
+
+        <div class="setting-item">
+          <label>Contamination Rate <span class="val-badge" id="valContamination">5%</span></label>
+          <input type="range" id="sliderContamination" min="1" max="25" step="1" value="5" class="slider" />
+          <div class="range-labels"><span>1%</span><span>25%</span></div>
+        </div>
+
+        <div class="setting-item">
+          <label>Chart Type</label>
+          <select id="selectChartType" class="select-input">
+            <option value="line">Line Chart</option>
+            <option value="scatter">Scatter Plot</option>
+            <option value="bar">Bar Chart</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Show Confidence Band</span>
+            <label class="toggle">
+              <input type="checkbox" id="toggleConfidence" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Show Moving Average</span>
+            <label class="toggle">
+              <input type="checkbox" id="toggleMA" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Auto Re-run on Change</span>
+            <label class="toggle">
+              <input type="checkbox" id="toggleAutoRun" />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="content">
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card" id="statTotal">
+        <div class="stat-icon blue"><i class="fas fa-database"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Total Points</span>
+          <span class="stat-value" id="statTotalVal">—</span>
+        </div>
+      </div>
+      <div class="stat-card" id="statAnomalies">
+        <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Anomalies Found</span>
+          <span class="stat-value" id="statAnomaliesVal">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fas fa-percent"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Anomaly Rate</span>
+          <span class="stat-value" id="statRateVal">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-wave-square"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Mean / Std Dev</span>
+          <span class="stat-value" id="statMeanVal">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-arrow-down-up-across-line"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Min / Max</span>
+          <span class="stat-value" id="statMinMaxVal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Panel -->
+    <section class="panel chart-panel">
+      <div class="panel-header">
+        <div class="chart-header-left">
+          <i class="fas fa-chart-area"></i>
+          <h3 id="chartTitle">Anomaly Detection Chart</h3>
+        </div>
+        <div class="chart-controls">
+          <button class="btn-icon" id="btnResetZoom" title="Reset Zoom">
+            <i class="fas fa-compress-arrows-alt"></i>
+          </button>
+          <button class="btn-icon" id="btnToggleFullscreen" title="Fullscreen">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrapper" id="chartWrapper">
+          <canvas id="mainChart"></canvas>
+          <div class="chart-placeholder" id="chartPlaceholder">
+            <i class="fas fa-chart-line placeholder-icon"></i>
+            <p>Load a dataset and run detection to visualize anomalies</p>
+            <button class="btn btn-primary mt-2" id="btnQuickStart">
+              <i class="fas fa-play"></i> Quick Start
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Row: Anomaly Table + Severity Chart -->
+    <div class="bottom-row">
+
+      <!-- Anomaly Results Table -->
+      <section class="panel results-panel">
+        <div class="panel-header">
+          <i class="fas fa-list-alt"></i>
+          <h3>Detected Anomalies</h3>
+          <span class="panel-badge" id="anomalyCount">0</span>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <div class="table-container">
+            <table class="results-table" id="resultsTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Index</th>
+                  <th>Value</th>
+                  <th>Score</th>
+                  <th>Severity</th>
+                  <th>Deviation</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody">
+                <tr class="empty-row">
+                  <td colspan="6">
+                    <i class="fas fa-search"></i> Run detection to see results
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Severity Chart + Mini Stats -->
+      <section class="panel side-panel">
+        <div class="panel-header">
+          <i class="fas fa-chart-pie"></i>
+          <h3>Severity Breakdown</h3>
+        </div>
+        <div class="panel-body">
+          <div class="severity-chart-wrapper">
+            <canvas id="severityChart" height="200"></canvas>
+          </div>
+          <div class="severity-legend" id="severityLegend">
+            <div class="sev-item">
+              <span class="sev-dot sev-high"></span>
+              <span>High</span>
+              <span class="sev-count" id="sevHigh">0</span>
+            </div>
+            <div class="sev-item">
+              <span class="sev-dot sev-medium"></span>
+              <span>Medium</span>
+              <span class="sev-count" id="sevMedium">0</span>
+            </div>
+            <div class="sev-item">
+              <span class="sev-dot sev-low"></span>
+              <span>Low</span>
+              <span class="sev-count" id="sevLow">0</span>
+            </div>
+          </div>
+          <div class="mini-stats" id="miniStats">
+            <div class="mini-stat">
+              <span class="mini-label">Algorithm</span>
+              <span class="mini-val" id="msAlgorithm">—</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">Threshold</span>
+              <span class="mini-val" id="msThreshold">—</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">Processing Time</span>
+              <span class="mini-val" id="msTime">—</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">Dataset</span>
+              <span class="mini-val" id="msDataset">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /bottom-row -->
+
+  </div><!-- /content -->
+</main>
+
+<!-- Toast notification -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p id="loadingText">Running Detection...</p>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/data.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
